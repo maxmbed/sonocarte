@@ -2,6 +2,10 @@
 #include <iostream>
 #include "alsa_port.hpp"
 
+Alsa_port::Alsa_port(const char* pcm_name) {
+    this->alsa_pcm_name = (char*)pcm_name;
+}
+
 Alsa_port::Alsa_port(const char* pcm_name, std::uint16_t channels, std::uint32_t sample_rate, std::uint32_t buffer_time, au_port_format format) {
 
     this->alsa_pcm_name = (char*)pcm_name;
@@ -171,6 +175,9 @@ int Alsa_port::port_open() {
     snd_output_stdio_attach(&log, stderr, 0);
     snd_pcm_dump(this->alsa_pcm_handle, log);
     snd_output_close(log);
+
+    this->port_bufsize = this->buffer_size;
+    this->port_chunksize = this->chunk_size;
 
     return 0;
 }

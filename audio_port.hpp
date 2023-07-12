@@ -40,6 +40,8 @@ class Audio_port_base {
         std::uint16_t port_channels;
         std::uint32_t port_sample_rate; // in Hz
         std::uint32_t port_buffer_time; // in millisecond
+        std::uint32_t port_bufsize;
+        std::uint32_t port_chunksize;
         au_port_format port_format;
 
         Audio_port_base() : port_channels(0), port_sample_rate(0), port_buffer_time(0), port_format(au_port_format::pcm_s16) { }
