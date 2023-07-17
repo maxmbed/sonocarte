@@ -6,15 +6,6 @@ Alsa_port::Alsa_port(const char* pcm_name) {
     this->alsa_pcm_name = (char*)pcm_name;
 }
 
-Alsa_port::Alsa_port(const char* pcm_name, std::uint16_t channels, std::uint32_t sample_rate, std::uint32_t buffer_time, au_port_format format) {
-
-    this->alsa_pcm_name = (char*)pcm_name;
-    this->port_channels = channels;
-    this->port_sample_rate = sample_rate;
-    this->port_buffer_time = buffer_time;
-    this->port_format = format;
-}
-
 Alsa_port::~Alsa_port() {
 
     this->port_close();
@@ -29,6 +20,10 @@ int Alsa_port::port_open() {
         std::cout << "open " << this->alsa_pcm_name << " " << snd_strerror(ret) << std::endl;
         return ret;
     }
+    return 0;
+}
+int Alsa_port::port_config(au_port_format format, au_port_sample_rate sample_rate, au_port_channel channel, std::uint32_t buffer_time) {
+    int ret;
 
     snd_pcm_sw_params_malloc(&this->alsa_swparams);
     if (this->alsa_swparams == NULL) {
@@ -58,51 +53,78 @@ int Alsa_port::port_open() {
         return ret;
     }
 
-    switch (this->port_format) {
+    snd_pcm_format_t alsa_format;
+    switch (format) {
 
-        case Alsa_port::au_port_format::pcm_s16:
-            this->alsa_format = SND_PCM_FORMAT_S16;
-            break;
-
-        case Alsa_port::au_port_format::pcm_s24:
-            this->alsa_format = SND_PCM_FORMAT_S24;
-            break;
-
+        case Alsa_port::au_port_format::pcm_s16: alsa_format = SND_PCM_FORMAT_S16; break;
+        case Alsa_port::au_port_format::pcm_s24: alsa_format = SND_PCM_FORMAT_S24; break;
         default:
             std::cout << "port format not supported" << std::endl;
             return -1;
     }
 
-    ret = snd_pcm_hw_params_set_format(this->alsa_pcm_handle, this->alsa_hwparam, this->alsa_format);
+    ret = snd_pcm_hw_params_set_format(this->alsa_pcm_handle, this->alsa_hwparam, alsa_format);
     if (ret < 0) {
 
         std::cout << "set format: " << snd_strerror(ret) << std::endl;
         return ret;
     }
+    else {
+        this->port_format = format;
+    }
 
-    ret = snd_pcm_hw_params_set_channels(this->alsa_pcm_handle, this->alsa_hwparam, this->port_channels);
+
+    unsigned int alsa_channel;
+    switch (channel) {
+        case Alsa_port::au_port_channel::channel_mono:   alsa_channel = 1U; break;
+        case Alsa_port::au_port_channel::channel_stereo: alsa_channel = 2U; break;
+        default:
+            std::cout << "port channel not supported" << std::endl;
+            return -1;
+    }
+    ret = snd_pcm_hw_params_set_channels(this->alsa_pcm_handle, this->alsa_hwparam, alsa_channel);
     if (ret < 0) {
 
         std::cout << "set channels number: " << snd_strerror(ret) << std::endl;
         return ret;
     }
+    else {
+        this->port_channels = channel;
+    }
 
-    unsigned int sample_rate = this->port_sample_rate;
-    ret = snd_pcm_hw_params_set_rate_near(this->alsa_pcm_handle, this->alsa_hwparam, &sample_rate, 0);
+    unsigned int alsa_sample_rate, alsa_sample_rate_near;
+    switch (sample_rate) {
+        case Audio_port_base::au_port_sample_rate::rate_8k:   alsa_sample_rate = 8000U;  break;
+        case Audio_port_base::au_port_sample_rate::rate_16k:  alsa_sample_rate = 16000U; break;
+        case Audio_port_base::au_port_sample_rate::rate_44k1: alsa_sample_rate = 44100U; break;
+        case Audio_port_base::au_port_sample_rate::rate_48k:  alsa_sample_rate = 48000U; break;
+        case Audio_port_base::au_port_sample_rate::rate_88k2: alsa_sample_rate = 88200U; break;
+        case Audio_port_base::au_port_sample_rate::rate_96k:  alsa_sample_rate = 96000U; break;
+        case Audio_port_base::au_port_sample_rate::rate_192k: alsa_sample_rate = 192000U; break;
+        default:
+            std::cout << "port sample rate not supported" << std::endl;
+            return -1;
+    }
+
+    alsa_sample_rate_near = alsa_sample_rate;
+    ret = snd_pcm_hw_params_set_rate_near(this->alsa_pcm_handle, this->alsa_hwparam, &alsa_sample_rate_near, 0);
     if (ret < 0) {
 
         std::cout << "set rate: " << snd_strerror(ret) << std::endl;
         return ret;
     }
 
-    if (sample_rate != this->port_sample_rate) {
+    if (alsa_sample_rate != alsa_sample_rate_near) {
 
-        std::cout << "cannot set sample rate " << this->port_sample_rate << "Hz" << std::endl;
-        std::cout << "use nearest rate " << sample_rate << "Hz" << std::endl;
+        std::cout << "cannot set sample rate " << alsa_sample_rate << "Hz" << std::endl;
+        std::cout << "use nearest rate " << alsa_sample_rate_near << "Hz" << std::endl;
+    }
+    else {
+        this->port_sample_rate = sample_rate;
     }
 
 
-    unsigned int buffer_time_calc = this->port_buffer_time * 1000; // Alsa buffer time must be microsecond
+    unsigned int buffer_time_calc = buffer_time * 1000; // Alsa buffer time must be microsecond
     unsigned int buffer_time_near = buffer_time_calc;
 
     ret = snd_pcm_hw_params_set_buffer_time_near(this->alsa_pcm_handle, this->alsa_hwparam, &buffer_time_near, 0);
@@ -122,7 +144,7 @@ int Alsa_port::port_open() {
         std::cout << "use nearest time " << buffer_time_near << std::endl;
     }
 
-    unsigned int period_time_calc = (this->port_buffer_time*1000)/4;
+    unsigned int period_time_calc = (buffer_time*1000)/4; // Rule of thumb from ALSA example were the period should be 4 time less than the buffer time
     unsigned int period_time_near = period_time_calc;
 
     ret = snd_pcm_hw_params_set_period_time_near(this->alsa_pcm_handle, this->alsa_hwparam, &period_time_near, 0);
@@ -140,6 +162,9 @@ int Alsa_port::port_open() {
         std::cout << "cannot set period time " << period_time_calc << std::endl;
         std::cout << "use nearest time " << period_time_near << std::endl;
     }
+    else {
+        this->port_buffer_time = buffer_time;
+    }
 
     ret = snd_pcm_hw_params(this->alsa_pcm_handle, this->alsa_hwparam);
     if (ret < 0) {
@@ -154,15 +179,34 @@ int Alsa_port::port_open() {
         return ret;
     }
 
-    snd_pcm_hw_params_get_period_size(this->alsa_hwparam, &this->chunk_size, 0);
-    snd_pcm_hw_params_get_buffer_size(this->alsa_hwparam, &this->buffer_size);
+    snd_pcm_uframes_t chunk_size = 0;
+    snd_pcm_uframes_t buffer_size = 0;
 
-    if (this->chunk_size == this->buffer_size) {
-        std::cout << "Can't use period equal to buffer size" << std::endl;
-        return -1;
+    ret = snd_pcm_hw_params_get_period_size(this->alsa_hwparam, &chunk_size, 0);
+    if (ret != 0) {
+        std::cout << "unable to get period size: " << snd_strerror(ret) << std::endl;
+        return ret;
+    }
+    snd_pcm_hw_params_get_buffer_size(this->alsa_hwparam, &buffer_size);
+    if (ret != 0) {
+        std::cout << "unable to get buffer size: " << snd_strerror(ret) << std::endl;
+        return ret;
     }
 
-    snd_pcm_sw_params_set_avail_min(this->alsa_pcm_handle, this->alsa_swparams, this->chunk_size);
+    if (chunk_size == buffer_size) {
+        std::cout << "can't use period equal to buffer size" << std::endl;
+        return -1;
+    }
+    else {
+        this->port_bufsize = buffer_size;
+        this->port_chunksize = chunk_size;
+    }
+
+    ret = snd_pcm_sw_params_set_avail_min(this->alsa_pcm_handle, this->alsa_swparams, chunk_size);
+    if (ret != 0) {
+        std::cout << "unable to set sw min chunk: " << snd_strerror(ret) << std::endl;
+        return ret;
+    }
 
     ret = snd_pcm_sw_params(this->alsa_pcm_handle, this->alsa_swparams);
     if (ret < 0) {
@@ -175,9 +219,6 @@ int Alsa_port::port_open() {
     snd_output_stdio_attach(&log, stderr, 0);
     snd_pcm_dump(this->alsa_pcm_handle, log);
     snd_output_close(log);
-
-    this->port_bufsize = this->buffer_size;
-    this->port_chunksize = this->chunk_size;
 
     return 0;
 }
