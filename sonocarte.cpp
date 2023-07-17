@@ -2,12 +2,11 @@
 #include <string>
 #include <sndfile.hh>
 
+#include "sndfile_port.hpp"
 #include "alsa_port.hpp"
-
 
 class Sonocarte {
     public:
-        SndfileHandle song;
 
         enum class command_playback {
             undef = 0,
@@ -28,18 +27,18 @@ class Sonocarte {
         enum class error_type {
             success = 0,
             error_undef,
-
         };
 
-        Sonocarte(Audio_port_base& audio_port) : audio(audio_port) {}
+        Sonocarte(Audio_port_base& audio_port, Audio_file_base & audio_file) : audio(audio_port), file(audio_file) {}
 
         int audio_open(void) {
-            audio.port_buffer_time = 100;
-            audio.port_channels = song.channels();
-            audio.port_sample_rate = song.samplerate();
-            audio.port_format = Audio_port_base::au_port_format::pcm_s16;
 
             return audio.port_open();
+        }
+
+        int audio_config() {
+            audio.port_config(file.format, file.sample_rate, file.channel, 100);
+            return 0;
         }
 
         int audio_close(void) {
@@ -51,35 +50,19 @@ class Sonocarte {
         }
 
         int song_open(std::string song_path) {
-
-            song = SndfileHandle(song_path);
-
-            if (song.error() == 0) {
-
-                std::cout << song << std::endl;
-                std::cout << " channels: " << song.channels() << std::endl;
-                std::cout << " frames: "  << song.frames() << std::endl;
-                std::cout << " format: " << song.format() << std::endl;
-                std::cout << " sample rate:" << song.samplerate() << std::endl;
-            }
-            else {
-                std::cout << "error: " << song.strError() << std::endl;
-                return -1;
-            }
-
+            file.open(song_path);
             return 0;
         }
 
         int song_close() {
-
-           ~SndfileHandle();
+           file.close();
            return 0;
         }
 
         int song_play() {
             std::uint32_t chunk;
 
-            buffer_ptr = static_cast<std::int8_t*>(operator new(audio.port_bufsize, std::nothrow));
+            buffer_ptr = static_cast<std::uint8_t*>(operator new(audio.port_bufsize, std::nothrow));
             if (buffer_ptr == NULL) {
 
                 std::cout << "error cannot allocate audio buffer" << std::endl; 
@@ -87,7 +70,7 @@ class Sonocarte {
             }
 
             do {
-                chunk = song.readf((short*)buffer_ptr, audio.port_chunksize);
+                chunk = file.read(buffer_ptr, audio.port_chunksize);
 
                 if (chunk >= 0) {
                     audio_write((std::uint8_t*)buffer_ptr, chunk);
@@ -102,7 +85,8 @@ class Sonocarte {
 
     private:
         Audio_port_base& audio;
-        std::int8_t* buffer_ptr;
+        Audio_file_base& file;
+        std::uint8_t* buffer_ptr = nullptr;
 
 };
 
@@ -115,8 +99,11 @@ int main(int argc, char* argv[]) {
         std::exit(static_cast<int>(std::errc::invalid_argument));
     }
 
-    Alsa_port alsa_port_pa("pulse");
-    Sonocarte sonocarte(alsa_port_pa);
+
+    Alsa_port alsa_port("pulse");
+    Sndfile_port file_port;
+
+    Sonocarte sonocarte(alsa_port, file_port);
 
     std::string song(argv[1]);
 
@@ -129,7 +116,15 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
+    if (sonocarte.audio_config() != 0) {
+        std::cout << "error config audio" << std::endl;
+        return -1;
+    }
+
     sonocarte.song_play();
+    sonocarte.song_close();
+
+    std::cout << "Sonocarte demo end" << std::endl;
 
     return 0;
 }
