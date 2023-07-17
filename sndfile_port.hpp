@@ -1,0 +1,22 @@
+#ifndef SNDFILE_PORT_HPP
+#define SNDFILE_PORT_HPP
+
+#include <sndfile.hh>
+
+#include "audio_file.hpp"
+
+class Sndfile_port : public Audio_file_base {
+    public:
+        Sndfile_port() {};
+        ~Sndfile_port();
+
+        virtual int open(std::string path);
+        virtual int close();
+        virtual int read(std::uint8_t* pbuffer, std::uint32_t len);
+        virtual int seek(std::int32_t position);
+
+    private:
+        SndfileHandle file;
+};
+
+#endif
