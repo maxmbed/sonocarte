@@ -14,7 +14,7 @@ Run the init script. Conan automatically downloads and builds the necessary libr
 
 ```shell
 ./conan_init.sh
-``
+```
 
 To build project
 
