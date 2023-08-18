@@ -11,6 +11,7 @@ find_package(ALSA REQUIRED)
 set (APP_CXX_SRC
     ${PROJECT_SOURCE_DIR}/alsa_port.cpp
     ${PROJECT_SOURCE_DIR}/sndfile_port.cpp
+    ${PROJECT_SOURCE_DIR}/player.cpp
     ${PROJECT_SOURCE_DIR}/sonocarte.cpp
 )
 

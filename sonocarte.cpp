@@ -4,6 +4,7 @@
 
 #include "sndfile_port.hpp"
 #include "alsa_port.hpp"
+#include "player.hpp"
 
 class Sonocarte {
     public:
@@ -104,6 +105,7 @@ int main(int argc, char* argv[]) {
     Sndfile_port file_port;
 
     Sonocarte sonocarte(alsa_port, file_port);
+    Player player_1(alsa_port);
 
     std::string song(argv[1]);
 
