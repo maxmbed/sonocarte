@@ -1,6 +1,44 @@
 
 #include <iostream>
+#include <format>
 #include "alsa_port.hpp"
+
+
+static void _list_avail_dev(const char *devname) {
+    char** hints;
+    int    err;
+    char** n;
+    char*  name;
+    char*  desc;
+    char*  ioid;
+    constexpr int showallcards = -1;
+
+    std::cout << "List of available " << devname << std::endl;
+    /* Enumerate sound devices */
+    err = snd_device_name_hint(showallcards, devname, (void***)&hints);
+    if (err != 0) {
+      std::cout << "Cannot get device names" << std::endl;
+        exit(1);
+    }
+    n = hints;
+    while (*n != NULL) {
+        name = snd_device_name_get_hint(*n, "NAME");
+        desc = snd_device_name_get_hint(*n, "DESC");
+        ioid = snd_device_name_get_hint(*n, "IOID");
+
+        std::cout << std::format("\tDevices: {}\n", name != NULL ? name: "none");
+        std::cout << std::format("\tDescription: {}\n", desc != NULL ? desc : "none");
+        std::cout << std::format("\tI/O type: {}\n", ioid != NULL ? ioid : "none");
+        std::cout << std::endl;
+
+        if (name && strcmp("null", name)) free(name);
+        if (desc && strcmp("null", desc)) free(desc);
+        if (ioid && strcmp("null", ioid)) free(ioid);
+        n++;
+    }
+    //Free hint buffer too
+    snd_device_name_free_hint((void**)hints);
+}
 
 Alsa_port::Alsa_port(const char* pcm_name) {
     this->alsa_pcm_name = (char*)pcm_name;
@@ -18,6 +56,7 @@ int Alsa_port::port_open() {
     if(ret < 0) {
 
         std::cout << "open " << this->alsa_pcm_name << " " << snd_strerror(ret) << std::endl;
+        _list_avail_dev("pcm");
         return ret;
     }
     return 0;
