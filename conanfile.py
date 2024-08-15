@@ -6,7 +6,7 @@ class CompressorRecipe(ConanFile):
     generators = "CMakeToolchain", "CMakeDeps"
 
     def requirements(self):
-        self.requires("libsndfile/1.2.0")
+        self.requires("libsndfile/1.2.2")
 
         # Cannot add libalsa in the requirement list
         # The runtime environement variable ALSA_CONFIG_DIR is linked to conan sub-directory instead of the system one
