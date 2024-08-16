@@ -10,10 +10,10 @@ class Sndfile_port : public Audio_file_base {
         Sndfile_port() {};
         ~Sndfile_port();
 
-        virtual int open(std::string path);
-        virtual int close();
-        virtual int read(std::uint8_t* pbuffer, std::uint32_t len);
-        virtual int seek(std::int32_t position);
+        int open(std::string path);
+        int close();
+        int read(std::uint8_t* pbuffer, std::uint32_t len);
+        int seek(std::int32_t position);
 
     private:
         SndfileHandle file;

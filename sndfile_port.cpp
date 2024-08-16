@@ -1,4 +1,7 @@
 #include <iostream>
+#include <ostream>
+#include <format>
+#include <sndfile.h>
 #include "sndfile_port.hpp"
 
 Sndfile_port::~Sndfile_port() {
@@ -10,12 +13,25 @@ int Sndfile_port::open(std::string path) {
     this->file = SndfileHandle(path);
 
     if (file.error() == 0) {
-
-        std::cout << path << std::endl;
+        std::cout << "file info:" << std::endl;
+        std::cout << " name : " << path << std::endl;
         std::cout << " channels: " << this->file.channels() << std::endl;
         std::cout << " frames: "  << this->file.frames() << std::endl;
-        std::cout << " format: " << this->file.format() << std::endl;
         std::cout << " sample rate:" << this->file.samplerate() << std::endl;
+
+        SF_FORMAT_INFO format_info;
+        format_info.format = this->file.format() & SF_FORMAT_TYPEMASK;
+        if (this->file.command(SFC_GET_FORMAT_INFO, &format_info, sizeof(format_info)) == 0) {
+            std::cout << " type format: " << format_info.format << std::endl;
+            std::cout << "   name: "      << (format_info.name != (void*)NULL ? format_info.name : "none") << std::endl;
+            std::cout << "   extension: " << (format_info.extension != (void*)NULL ? format_info.extension : "none") << std::endl;
+        }
+        format_info.format = this->file.format() & SF_FORMAT_SUBMASK;
+        if (this->file.command(SFC_GET_FORMAT_SUBTYPE, &format_info, sizeof(format_info)) == 0) {
+            std::cout << " sub format: "  << format_info.format << std::endl;
+            std::cout << "   name: "      << (format_info.name != (void*)NULL ? format_info.name : "none") << std::endl;
+            std::cout << "   extension: " << (format_info.extension != (void*)NULL ? format_info.extension : "none") << std::endl;
+        }
 
         switch (this->file.format() & SF_FORMAT_SUBMASK) {
             case SF_FORMAT_PCM_S8: this->format = Audio_port_base::au_port_format::pcm_s8; break;
