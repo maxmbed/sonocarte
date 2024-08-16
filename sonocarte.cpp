@@ -56,39 +56,18 @@ class Sonocarte {
         }
 
         int song_close() {
-           file.close();
-           return 0;
+            file.close();
+            return 0;
         }
 
         int song_play() {
-            std::uint32_t chunk;
-
-            buffer_ptr = static_cast<std::uint8_t*>(operator new(audio.port_bufsize, std::nothrow));
-            if (buffer_ptr == NULL) {
-
-                std::cout << "error cannot allocate audio buffer" << std::endl; 
-                return -1;
-            }
-
-            do {
-                chunk = file.read(buffer_ptr, audio.port_chunksize);
-
-                if (chunk >= 0) {
-                    audio_write((std::uint8_t*)buffer_ptr, chunk);
-                }
-
-            } while (chunk == audio.port_chunksize);
-
-            operator delete(static_cast<void*>(buffer_ptr));
-
+            Player player(audio, file);
             return 0;
         }
 
     private:
         Audio_port_base& audio;
         Audio_file_base& file;
-        std::uint8_t* buffer_ptr = nullptr;
-
 };
 
 int main(int argc, char* argv[]) {
@@ -101,11 +80,10 @@ int main(int argc, char* argv[]) {
     }
 
 
-    Alsa_port alsa_port("pulse");
+    Alsa_port alsa_port("pipewire");
     Sndfile_port file_port;
 
     Sonocarte sonocarte(alsa_port, file_port);
-    Player player_1(alsa_port);
 
     std::string song(argv[1]);
 
@@ -125,7 +103,6 @@ int main(int argc, char* argv[]) {
 
     sonocarte.song_play();
     sonocarte.song_close();
-
     std::cout << "Sonocarte demo end" << std::endl;
 
     return 0;

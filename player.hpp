@@ -3,25 +3,29 @@
 
 #include <thread>
 
+#include "audio_file.hpp"
 #include "audio_port.hpp"
-#include "song.hpp"
 
 class Player {
 
     public:
 
-        Player(Audio_port_base& audio_port) : audio(audio_port), thread_handler(player_thread, std::ref(audio_port)) { }
+        Player(Audio_port_base& audio_port, Audio_file_base& audio_file) : audio(audio_port), file(audio_file) {
+            thread_handler = std::thread(player_thread, std::ref(audio_port), std::ref(audio_file));
+            thread_handler.join(); // For the moment, wait player thread plays until the end of audio file
+        }
 
-        int play(Song& song);
-        int pause(Song& song);
-        int stop(Song& song);
-        int config(Song& song);
+        int play();
+        int pause();
+        int stop();
+        int config();
 
     private:
         Audio_port_base& audio;
+        Audio_file_base& file;
         std::thread thread_handler;
 
-        static void player_thread(Audio_port_base& audio);
+        static void player_thread(Audio_port_base& audio, Audio_file_base& file);
 };
 
 #endif
