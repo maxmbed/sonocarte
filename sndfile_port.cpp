@@ -1,6 +1,5 @@
 #include <iostream>
 #include <ostream>
-#include <format>
 #include <sndfile.h>
 #include "sndfile_port.hpp"
 
@@ -31,6 +30,35 @@ int Sndfile_port::open(std::string path) {
             std::cout << " sub format: "  << format_info.format << std::endl;
             std::cout << "   name: "      << (format_info.name != (void*)NULL ? format_info.name : "none") << std::endl;
             std::cout << "   extension: " << (format_info.extension != (void*)NULL ? format_info.extension : "none") << std::endl;
+        }
+
+        SF_CART_INFO cart;
+        std::cout << "cart info:";
+        if (file.command(SFC_GET_CART_INFO, &cart, sizeof(cart)) == SF_TRUE) {
+            std::cout << "  title: " << cart.title << std::endl;
+            std::cout << "  artist: " << cart.artist << std::endl;
+        }
+        else {
+            std::cout << " none" << std::endl;
+        }
+
+        SF_CUES cues;
+        std::cout << "cues info:";
+        if (file.command(SFC_GET_CUE, &cues, sizeof (cues)) == SF_TRUE) {
+            while (cues.cue_count > 0) {
+                std::cout << std::endl;
+                std::cout << "  index: "         << cues.cue_points[cues.cue_count-1].indx << std::endl;
+                std::cout << "  name: "          << cues.cue_points[cues.cue_count-1].name << std::endl;
+                std::cout << "  position: "      << cues.cue_points[cues.cue_count-1].position << std::endl;
+                std::cout << "  chunck fcc: "    << cues.cue_points[cues.cue_count-1].fcc_chunk << std::endl;
+                std::cout << "  chunck start: "  << cues.cue_points[cues.cue_count-1].chunk_start << std::endl;
+                std::cout << "  block start: "   << cues.cue_points[cues.cue_count-1].block_start << std::endl;
+                std::cout << "  sample offset: " << cues.cue_points[cues.cue_count-1].sample_offset << std::endl;
+                cues.cue_count--;
+            }
+        }
+        else {
+            std::cout << " none" << std::endl;
         }
 
         switch (this->file.format() & SF_FORMAT_SUBMASK) {
