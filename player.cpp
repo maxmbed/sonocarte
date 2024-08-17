@@ -1,10 +1,12 @@
 #include <iostream>
+#include <format>
+#include <thread>
 #include "player.hpp"
 #include "audio_file.hpp"
 
 void Player::player_thread(Audio_port_base& audio, Audio_file_base& file) {
 
-    std::cout << "player start " << std::this_thread::get_id() << std::endl;
+    std::cout << std::format("Player starts {}", file.meta.title) << std::endl;
     std::uint32_t chunk;
     std::uint8_t* buffer_ptr = nullptr;
 

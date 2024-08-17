@@ -1,7 +1,9 @@
 #include <iostream>
 #include <ostream>
 #include <sndfile.h>
+#include <sndfile.hh>
 #include "sndfile_port.hpp"
+#include "audio_file.hpp"
 
 Sndfile_port::~Sndfile_port() {
     this->close();
@@ -60,6 +62,8 @@ int Sndfile_port::open(std::string path) {
         else {
             std::cout << " none" << std::endl;
         }
+
+        this->get_meta();
 
         switch (this->file.format() & SF_FORMAT_SUBMASK) {
             case SF_FORMAT_PCM_S8: this->format = Audio_port_base::au_port_format::pcm_s8; break;
@@ -134,5 +138,49 @@ int Sndfile_port::seek(std::int32_t position) {
         std::cout << "error file seek: " << this->file.strError() << std::endl;
         return -1;
     }
+    return 0;
+}
+
+int Sndfile_port::get_meta() {
+    // Assign meta data of file
+    const char* str = NULL;
+    std::cout << "meta: " << std::endl;
+    // Title
+    str = this->file.getString(SF_STR_TITLE);
+    this->meta.title.assign((str != NULL ? str : "none"));
+    std::cout << "  title: " << this->meta.title << std::endl;
+    // Album
+    str = this->file.getString(SF_STR_ALBUM);
+    this->meta.album.assign((str != NULL ? str : "none"));
+    std::cout << "  album: " << this->meta.album << std::endl;
+    // Track number
+    str = this->file.getString(SF_STR_TRACKNUMBER);
+    this->meta.track_number.assign((str != NULL ? str : "none"));
+    std::cout << "  track: " << this->meta.track_number << std::endl;
+    // Genre
+    str = this->file.getString(SF_STR_GENRE);
+    this->meta.genre.assign((str != NULL ? str : "none"));
+    std::cout << "  genre: " << this->meta.genre << std::endl;
+    // Date
+    str = this->file.getString(SF_STR_DATE);
+    this->meta.date.assign((str != NULL ? str : "none"));
+    std::cout << "  date: " << this->meta.date << std::endl;
+    // Comment
+    str = this->file.getString(SF_STR_COMMENT);
+    this->meta.comment.assign((str != NULL ? str : "none"));
+    std::cout << "  comment: " << this->meta.comment << std::endl;
+    // Copyright
+    str = this->file.getString(SF_STR_COPYRIGHT);
+    this->meta.copyright.assign((str != NULL ? str : "none"));
+    std::cout << "  copyright: " << this->meta.copyright << std::endl;
+    // License
+    str = this->file.getString(SF_STR_LICENSE);
+    this->meta.license.assign((str != NULL ? str : "none"));
+    std::cout << "  license: " << this->meta.license << std::endl;
+    // Software
+    str = this->file.getString(SF_STR_SOFTWARE);
+    this->meta.software.assign((str != NULL ? str : "none"));
+    std::cout << "  software: " << this->meta.software << std::endl;
+
     return 0;
 }
