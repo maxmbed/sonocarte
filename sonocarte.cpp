@@ -1,7 +1,10 @@
 #include <iostream>
+#include <list>
 #include <string>
+#include <filesystem>
 #include <sndfile.hh>
 
+#include "audio_file.hpp"
 #include "sndfile_port.hpp"
 #include "alsa_port.hpp"
 #include "player.hpp"
@@ -30,7 +33,7 @@ class Sonocarte {
             error_undef,
         };
 
-        Sonocarte(Audio_port_base& audio_port, Audio_file_base & audio_file) : audio(audio_port), file(audio_file) {}
+        Sonocarte(Audio_port_base& audio_port, Audio_file_base & audio_file) : audio(audio_port), file(audio_file) { }
 
         int audio_open(void) {
 
@@ -51,7 +54,30 @@ class Sonocarte {
         }
 
         int song_open(std::string song_path) {
-            file.open(song_path);
+            if (std::filesystem::exists(song_path) == false) {
+                std::cout << "Sonocarte song path does not exist" << std::endl;
+                return -1;
+            }
+            if (std::filesystem::is_directory(song_path)) {
+                if (std::filesystem::is_empty(song_path)) {
+                    std::cout << "song path directory empty" << std::endl;
+                    return -1;
+                }
+                std::cout << "gather all audio file from directory" << std::endl;
+                for (auto const& dir_entry : std::filesystem::directory_iterator{song_path}) {
+                    std::string tmp_str = dir_entry.path();
+                    if (tmp_str.find("wav") != std::string::npos) {
+                        song_list.push_back(dir_entry.path());
+                    }
+                }
+            }
+            else if (std::filesystem::is_regular_file(song_path)) {
+                song_list.push_back(song_path);
+            }
+            else {
+                std::cout << "song path not a file or directory" << std::endl;
+                return -1;
+            }
             return 0;
         }
 
@@ -62,12 +88,14 @@ class Sonocarte {
 
         int song_play() {
             Player player(audio, file);
+            player.play(song_list);
             return 0;
         }
 
     private:
         Audio_port_base& audio;
         Audio_file_base& file;
+        std::list<std::string> song_list;
 };
 
 int main(int argc, char* argv[]) {
@@ -93,11 +121,6 @@ int main(int argc, char* argv[]) {
 
     if (sonocarte.audio_open() != 0) {
         std::cout << "error open audio" << std::endl;
-        return -1;
-    }
-
-    if (sonocarte.audio_config() != 0) {
-        std::cout << "error config audio" << std::endl;
         return -1;
     }
 
