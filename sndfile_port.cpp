@@ -184,3 +184,7 @@ int Sndfile_port::get_meta() {
 
     return 0;
 }
+
+Audio_file_base::file_supported Sndfile_port::get_file_supported_list() {
+  return {".wav", ".ogg", ".flac", ".mpeg" };
+}

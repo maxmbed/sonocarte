@@ -15,6 +15,7 @@ class Sndfile_port : public Audio_file_base {
         int read(std::uint8_t* pbuffer, std::uint32_t len);
         int seek(std::int32_t position);
         int get_meta();
+        file_supported get_file_supported_list();
 
     private:
         SndfileHandle file;

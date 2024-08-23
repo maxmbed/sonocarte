@@ -63,11 +63,11 @@ class Sonocarte {
                     std::cout << "song path directory empty" << std::endl;
                     return -1;
                 }
-                std::cout << "gather all audio file from directory" << std::endl;
                 for (auto const& dir_entry : std::filesystem::directory_iterator{song_path}) {
-                    std::string tmp_str = dir_entry.path();
-                    if (tmp_str.find("wav") != std::string::npos) {
-                        song_list.push_back(dir_entry.path());
+                    for (auto file_supported : file.get_file_supported_list()) {
+                        if (dir_entry.path().extension() == file_supported) {
+                            song_list.push_back(dir_entry.path());
+                        }
                     }
                 }
             }
