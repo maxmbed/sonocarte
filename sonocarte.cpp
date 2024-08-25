@@ -33,7 +33,7 @@ class Sonocarte {
             error_undef,
         };
 
-        Sonocarte(Audio_port_base& audio_port, Audio_file_base & audio_file) : audio(audio_port), file(audio_file) { }
+        Sonocarte(Audio_port_base& audio_port, Audio_file_base & audio_file) : audio(audio_port), file(audio_file), player_song(Player(audio_port, audio_file)) { }
 
         int audio_open(void) {
 
@@ -87,14 +87,14 @@ class Sonocarte {
         }
 
         int song_play() {
-            Player player(audio, file);
-            player.play(song_list);
+            player_song.play(song_list);
             return 0;
         }
 
     private:
         Audio_port_base& audio;
         Audio_file_base& file;
+        Player player_song;
         std::list<std::string> song_list;
 };
 
