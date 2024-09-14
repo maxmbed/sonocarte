@@ -53,6 +53,7 @@ class Audio_port_base {
         virtual int port_open() = 0;
         virtual int port_config(au_port_format format, au_port_sample_rate sample_rate, au_port_channel channel, std::uint32_t buffer_time) = 0;
         virtual int port_write(std::uint8_t* frame_ptr, std::uint32_t frame_count) = 0;
+        virtual int port_idle() = 0;
         virtual int port_close() = 0;
 };
 

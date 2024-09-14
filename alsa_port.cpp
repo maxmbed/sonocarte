@@ -1,4 +1,3 @@
-
 #include <iostream>
 #include <format>
 #include "alsa_port.hpp"
@@ -311,6 +310,14 @@ int Alsa_port::port_write(std::uint8_t* frame_ptr, std::uint32_t frame_count) {
             }
             snd_pcm_prepare(this->alsa_pcm_handle);
             break;
+
+        case SND_PCM_STATE_SETUP:
+            snd_pcm_prepare(this->alsa_pcm_handle);
+            break;
+
+        default:
+            std::cout << "pcm state " << snd_pcm_state(this->alsa_pcm_handle) << std::endl;
+            break;
     }
 
     ret = snd_pcm_writei(this->alsa_pcm_handle, reinterpret_cast<const void*>(frame_ptr), static_cast<snd_pcm_uframes_t>(frame_count));
@@ -324,5 +331,10 @@ int Alsa_port::port_write(std::uint8_t* frame_ptr, std::uint32_t frame_count) {
         snd_pcm_recover(this->alsa_pcm_handle, ret, 0);
     }
 
+    return 0;
+}
+
+int Alsa_port::port_idle() {
+    snd_pcm_drain(this->alsa_pcm_handle);
     return 0;
 }
